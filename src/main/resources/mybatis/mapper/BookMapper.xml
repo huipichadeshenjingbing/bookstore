@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.liuhao.dao.admin.BookDao">
+	<!-- 多表联合查询 -->
+	<resultMap type="Book" id="bookMap">
+		<id column="n_id" property="id" />
+		<result column="n_categoryId" property="categoryId" />
+		<result column="n_title" property="title" />
+		<result column="n_abstrs" property="abstrs" />
+		<result column="n_tags" property="tags" />
+		<result column="n_photo" property="photo" />
+		<result column="n_author" property="author" />
+		<result column="n_content" property="content" />
+		<result column="n_viewNumber" property="viewNumber" />
+		<result column="n_commentNumber" property="commentNumber" />
+		<result column="n_createTime" property="createTime" />
+		<association property="bookCategory" javaType="BookCategory">
+			<id column="nc_id" property="id" />
+			<result column="nc_name" property="name" />
+			<result column="nc_sort" property="sort" />
+		</association>
+	</resultMap>
+	
+	
+	<!-- 添加书籍 -->
+	<insert id="add" parameterType="Book">
+		insert into book(id,categoryId,title,abstrs,tags,photo,author,content,viewNumber,commentNumber,createTime) values(null,#{categoryId},#{title},#{abstrs},#{tags},#{photo},#{author},#{content},#{viewNumber},#{commentNumber},#{createTime})
+	</insert>
+	<!-- 修改书籍 -->
+	<update id="edit" parameterType="Book">
+		update book set categoryId = #{categoryId}, title = #{title},abstrs = #{abstrs},tags = #{tags},photo = #{photo},author = #{author},content = #{content} where id = #{id}
+	</update>
+	<!-- 删除书籍 -->
+	<delete id="delete" parameterType="Long">
+		delete from book where id = ${value}
+	</delete>
+	<!-- 分页获取书籍列表 -->
+	<select id="findList" parameterType="Map" resultMap="bookMap">
+		select n.id as n_id,n.categoryId as n_categoryId,n.title as n_title,n.abstrs as n_abstrs,n.tags as n_tags,n.photo as n_photo,n.author as n_author,n.content as n_content,n.viewNumber as n_viewNumber,n.commentNumber as n_commentNumber,n.createTime as n_createTime,
+		nc.id as nc_id,nc.name as nc_name,nc.sort as nc_sort 
+		from book n,book_category nc where n.categoryId = nc.id
+		<if test="title != null">
+			and n.title like '%${title}%' 
+		</if>
+		<if test="author != null">
+			and n.author like '%${author}%' 
+		</if>
+		<if test="categoryId != null">
+			and n.categoryId = #{categoryId}  
+		</if>
+		order by createTime desc 
+		<if test="offset != null and pageSize != null">
+			limit #{offset},#{pageSize}
+		</if>
+	</select>
+	<!-- 获取单条书籍记录 -->
+	<select id="find" parameterType="Long" resultMap="bookMap">
+		select n.id as n_id,n.categoryId as n_categoryId,n.title as n_title,n.abstrs as n_abstrs,n.tags as n_tags,n.photo as n_photo,n.author as n_author,n.content as n_content,n.viewNumber as n_viewNumber,n.commentNumber as n_commentNumber,n.createTime as n_createTime,
+		nc.id as nc_id,nc.name as nc_name,nc.sort as nc_sort 
+		from book n,book_category nc where n.categoryId = nc.id and n.id = #{value}
+	</select>
+	<!-- 获取符合结果的总记录数 -->
+	<select id="getTotal" parameterType="Map" resultType="Integer">
+		select count(*) from book where 1 = 1
+		<if test="title != null">
+			and title like '%${title}%' 
+		</if>
+		<if test="author != null">
+			and author like '%${author}%' 
+		</if>
+		<if test="categoryId != null">
+			and categoryId = #{categoryId}  
+		</if>
+	</select>
+	<!-- 按照评论获取前n条书籍 -->
+	<select id="findLastCommentList" parameterType="Integer" resultType="Book">
+		select * from book order by commentNumber desc limit 0,#{value}
+	</select>
+	<!-- 修改书籍评论数量 -->
+	<update id="updateCommentNumber" parameterType="Long">
+		update book set commentNumber = commentNumber + 1 where id = #{id}
+	</update>
+	<!-- 修改书籍浏览数量 -->
+	<update id="updateViewNumber" parameterType="Long">
+		update book set viewNumber = viewNumber + 1 where id = #{id}
+	</update>
+</mapper>
